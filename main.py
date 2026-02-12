@@ -21,7 +21,7 @@ app.add_middleware(
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 GEMINI_URL = (
-    "GEMINI_URL = "https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent"
+    "https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent"
 )
 
 
