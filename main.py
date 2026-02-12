@@ -5,6 +5,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import json
 import httpx
+from rag import load_resume_into_vector_db, search_resume
+
 
 RESUME_URL = "https://raw.githubusercontent.com/arunarthik/arun-ai-backend/main/data/resume.json"
 RESUME_DATA = {}
@@ -39,6 +41,8 @@ async def load_resume():
 @app.on_event("startup")
 async def startup_event():
     await load_resume()
+    load_resume_into_vector_db(RESUME_DATA)
+
 
 
 
@@ -52,6 +56,9 @@ async def chat(req: ChatRequest):
     if not OPENROUTER_API_KEY:
         raise HTTPException(status_code=500, detail="Missing OPENROUTER_API_KEY")
 
+    relevant_chunks = search_resume(req.message)
+    context = "\n".join(relevant_chunks)
+    
     payload = {
         "model": "openai/gpt-3.5-turbo",  # free & reliable
         "messages": [
