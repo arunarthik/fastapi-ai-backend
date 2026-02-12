@@ -6,7 +6,7 @@ from pydantic import BaseModel
 import json
 import httpx
 
-RESUME_URL = "https://raw.githubusercontent.com/arunarthik/arun-ai-backend/data/resume.json"
+RESUME_URL = "https://raw.githubusercontent.com/arunarthik/arun-ai-backend/main/data/resume.json"
 RESUME_DATA = {}
 
 
