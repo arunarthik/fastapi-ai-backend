@@ -14,8 +14,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-GEMINI_URL = "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-pro:generateContent"
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 
 class ChatRequest(BaseModel):
@@ -29,49 +29,49 @@ async def root():
 
 @app.post("/chat")
 async def chat(req: ChatRequest):
-    if not GEMINI_API_KEY:
-        raise HTTPException(status_code=500, detail="Missing GEMINI_API_KEY")
+    if not OPENROUTER_API_KEY:
+        raise HTTPException(status_code=500, detail="Missing OPENROUTER_API_KEY")
 
     payload = {
-        "contents": [
+        "model": "openai/gpt-3.5-turbo",  # free & reliable
+        "messages": [
             {
-                "role": "user",
-                "parts": [
-                    {
-                        "text": (
-                            "You are Arun's portfolio AI assistant. "
-                            "Answer briefly and professionally.\n\n"
-                            f"User: {req.message}"
-                        )
-                    }
-                ],
-            }
-        ]
+                "role": "system",
+                "content": (
+                    "You are Arun's portfolio AI assistant. "
+                    "Answer briefly and professionally using factual info."
+                ),
+            },
+            {"role": "user", "content": req.message},
+        ],
     }
 
     try:
         async with httpx.AsyncClient(timeout=30) as client:
             res = await client.post(
-                f"{GEMINI_URL}?key={GEMINI_API_KEY}",
+                OPENROUTER_URL,
+                headers={
+                    "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+                    "Content-Type": "application/json",
+                },
                 json=payload,
             )
 
+        if res.status_code != 200:
+            print("OPENROUTER HTTP ERROR:", res.text)
+            return {"reply": f"AI HTTP error: {res.status_code}"}
+
         data = res.json()
 
-        if "error" in data:
-            print("🔥 GEMINI ERROR RESPONSE:", data)
-            return {"reply": "AI error: " + data["error"].get("message", "unknown")}
-
-
         reply = (
-            data.get("candidates", [{}])[0]
-            .get("content", {})
-            .get("parts", [{}])[0]
-            .get("text", "No response from AI.")
+            data.get("choices", [{}])[0]
+            .get("message", {})
+            .get("content", "No response from AI.")
         )
 
         return {"reply": reply}
 
     except Exception as e:
-        print("Gemini error:", str(e))
+        print("OpenRouter error:", str(e))
         return {"reply": "Something went wrong. Please try again in a moment."}
+
