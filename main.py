@@ -41,7 +41,7 @@ async def load_resume():
 @app.on_event("startup")
 async def startup_event():
     await load_resume()
-    load_resume_into_vector_db(RESUME_DATA)
+    await load_resume_into_vector_db(RESUME_DATA)
 
 
 
@@ -57,7 +57,7 @@ async def chat(req: ChatRequest):
         raise HTTPException(status_code=500, detail="Missing OPENROUTER_API_KEY")
 
     # 🔹 RAG search happens HERE
-    relevant_chunks = search_resume(req.message)
+    relevant_chunks = await search_resume(req.message)
     context = "\n".join(relevant_chunks)
 
     payload = {
