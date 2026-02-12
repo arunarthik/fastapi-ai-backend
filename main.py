@@ -66,17 +66,24 @@ async def chat(req: ChatRequest):
 
         data = res.json()
 
+        # 🔴 If Gemini returned error → don't crash
         if "error" in data:
-            raise HTTPException(status_code=500, detail=data["error"]["message"])
+            return {"reply": "AI is temporarily unavailable. Please try again."}
 
-        reply = (
-            data.get("candidates", [{}])[0]
-            .get("content", {})
-            .get("parts", [{}])[0]
-            .get("text", "No response from AI.")
-        )
+        # 🔴 Safe extraction (no KeyError)
+        candidates = data.get("candidates", [])
+        if not candidates:
+            return {"reply": "I couldn’t generate a response right now."}
+
+        parts = candidates[0].get("content", {}).get("parts", [])
+        if not parts:
+            return {"reply": "I couldn’t generate a response right now."}
+
+        reply = parts[0].get("text", "No response from AI.")
 
         return {"reply": reply}
 
-    except httpx.RequestError:
-        raise HTTPException(status_code=500, detail="AI request failed")
+    except Exception as e:
+        # 🔴 Never crash → always safe response
+        print("Gemini error:", str(e))
+        return {"reply": "Something went wrong. Please try again in a moment."}
