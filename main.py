@@ -56,21 +56,22 @@ async def chat(req: ChatRequest):
     if not OPENROUTER_API_KEY:
         raise HTTPException(status_code=500, detail="Missing OPENROUTER_API_KEY")
 
+    # 🔹 RAG search happens HERE
     relevant_chunks = search_resume(req.message)
     context = "\n".join(relevant_chunks)
-    
+
     payload = {
-        "model": "openai/gpt-3.5-turbo",  # free & reliable
+        "model": "openai/gpt-3.5-turbo",
         "messages": [
             {
-            "role": "system",
-            "content": (
-                "You are an AI assistant that answers ONLY based on the following resume data.\n"
-                "If the answer is not in the resume, say you don't know.\n\n"
-        f"RESUME DATA:\n{json.dumps(RESUME_DATA, indent=2)}"
-    ),
-},
-
+                "role": "system",
+                "content": (
+                    "You are Arun's portfolio AI assistant.\n"
+                    "Answer ONLY using the provided resume context.\n"
+                    "If the answer is not present, say you don't know.\n\n"
+                    f"RESUME CONTEXT:\n{context}"
+                ),
+            },
             {"role": "user", "content": req.message},
         ],
     }
@@ -103,4 +104,3 @@ async def chat(req: ChatRequest):
     except Exception as e:
         print("OpenRouter error:", str(e))
         return {"reply": "Something went wrong. Please try again in a moment."}
-
