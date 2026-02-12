@@ -61,7 +61,7 @@ async def chat(req: ChatRequest):
     context = "\n".join(relevant_chunks)
 
     payload = {
-        "model": "openai/gpt-3.5-turbo",
+        "model": "meta-llama/llama-3.1-8b-instruct",
         "messages": [
             {
                 "role": "system",
