@@ -3,13 +3,9 @@ import httpx
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from dotenv import load_dotenv
-
-load_dotenv()
 
 app = FastAPI()
 
-# Allow frontend access
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -19,10 +15,7 @@ app.add_middleware(
 )
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-
-GEMINI_URL = (
-    "https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key={GEMINI_API_KEY}"
-)
+GEMINI_URL = "https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent"
 
 
 class ChatRequest(BaseModel):
@@ -65,24 +58,19 @@ async def chat(req: ChatRequest):
 
         data = res.json()
 
-        # 🔴 If Gemini returned error → don't crash
         if "error" in data:
+            print("Gemini API error:", data)
             return {"reply": "AI is temporarily unavailable. Please try again."}
 
-        # 🔴 Safe extraction (no KeyError)
-        candidates = data.get("candidates", [])
-        if not candidates:
-            return {"reply": "I couldn’t generate a response right now."}
-
-        parts = candidates[0].get("content", {}).get("parts", [])
-        if not parts:
-            return {"reply": "I couldn’t generate a response right now."}
-
-        reply = parts[0].get("text", "No response from AI.")
+        reply = (
+            data.get("candidates", [{}])[0]
+            .get("content", {})
+            .get("parts", [{}])[0]
+            .get("text", "No response from AI.")
+        )
 
         return {"reply": reply}
 
     except Exception as e:
-        # 🔴 Never crash → always safe response
         print("Gemini error:", str(e))
         return {"reply": "Something went wrong. Please try again in a moment."}
