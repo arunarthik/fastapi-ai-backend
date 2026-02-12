@@ -3,6 +3,12 @@ import httpx
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+import json
+import httpx
+
+RESUME_URL = "https://raw.githubusercontent.com/arunarthik/arun-ai-backend/data/resume.json"
+RESUME_DATA = {}
+
 
 app = FastAPI()
 
@@ -21,6 +27,20 @@ OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 class ChatRequest(BaseModel):
     message: str
 
+async def load_resume():
+    global RESUME_DATA
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            res = await client.get(RESUME_URL)
+            RESUME_DATA = res.json()
+            print("✅ Resume loaded from GitHub")
+    except Exception as e:
+        print("❌ Failed to load resume:", str(e))
+@app.on_event("startup")
+async def startup_event():
+    await load_resume()
+
+
 
 @app.get("/")
 async def root():
@@ -36,12 +56,14 @@ async def chat(req: ChatRequest):
         "model": "openai/gpt-3.5-turbo",  # free & reliable
         "messages": [
             {
-                "role": "system",
-                "content": (
-                    "You are Arun's portfolio AI assistant. "
-                    "Answer briefly and professionally using factual info."
-                ),
-            },
+            "role": "system",
+            "content": (
+                "You are an AI assistant that answers ONLY based on the following resume data.\n"
+                "If the answer is not in the resume, say you don't know.\n\n"
+        f"RESUME DATA:\n{json.dumps(RESUME_DATA, indent=2)}"
+    ),
+},
+
             {"role": "user", "content": req.message},
         ],
     }
