@@ -59,8 +59,9 @@ async def chat(req: ChatRequest):
         data = res.json()
 
         if "error" in data:
-            print("Gemini API error:", data)
-            return {"reply": "AI is temporarily unavailable. Please try again."}
+            print("🔥 GEMINI ERROR RESPONSE:", data)
+            return {"reply": "AI error: " + data["error"].get("message", "unknown")}
+
 
         reply = (
             data.get("candidates", [{}])[0]
